@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt 
 import pandas as pd
 import re
 from sklearn.feature_extraction.text import CountVectorizer
@@ -60,7 +61,6 @@ class FeatureCreation():
     def generate_features(self, data):
         """
         This function transforms data into set of features that are domain agnostic
-
         Feature list ===>
                 'ActionCount, VERBRatio', 'NOUNRatio', 'last_activity_len',
                 'ProblemCount', 'activity_count', 'ADJRatio', 'acronym_to_activity_ratio',
@@ -232,7 +232,7 @@ class FeatureCreation():
         data['text_word_count'] = data['clean_text'].apply(lambda x: len(str(x).split()))
         
         #Unique word text count
-        df['text_unique_word_count']=df["clean_text"].apply(lambda x: len(set(str(x).split())))
+        data['text_unique_word_count']=data["clean_text"].apply(lambda x: len(set(str(x).split())))
 
 
         # getting count of text lengthand word count 
@@ -240,7 +240,7 @@ class FeatureCreation():
         data['title_word_count'] = data['title'].apply(lambda x: len(str(x).split()))
 
         #Unique word title count
-        df['title_unique_word_count']=df["title"].apply(lambda x: len(set(str(x).split())))
+        data['title_unique_word_count']=data["title"].apply(lambda x: len(set(str(x).split())))
 
  
         data[['VERBRatio', 'NOUNRatio', 'PRONRatio', 'ADJRatio',
@@ -265,6 +265,15 @@ class FeatureCreation():
         logging.info("Creating Features: Last Activity Count")
         data['is_len_range_1_500'] = data.apply(
             lambda x: 1 if 0 < int(x['title_len']) <= 500 else 0, axis=1)
+
+        logging.info("Creating Features: Last Activity Count")
+        data['is_len_range_400_1100'] = data.apply(
+            lambda x: 1 if 400 < int(x['text_len']) <= 1100 else 0, axis=1)
+
+        logging.info("Creating Features: Last Activity Count")
+        data['is_len_range_22_80'] = data.apply(
+            lambda x: 1 if 22 < int(x['title_len']) <= 80 else 0, axis=1)
+
 
         logging.info("Features are created")
         return data
@@ -297,7 +306,7 @@ class FeatureCreation():
     def xgbclassifier(self, train_data, train_label, test_data, test_label):
         logging.info("Building XGB Classifier")
         model = xgb.XGBClassifier(objective="binary:logistic",
-                                  random_state=42)
+                                  random_state=7)
         #                               learning_rate=0.3,
         #                               max_leaf_nodes= 8,
         #                               n_estimators=100,
@@ -325,12 +334,12 @@ class FeatureCreation():
         # plt.show()
 
         # Feature Importance
-        # fig, ax = plt.subplots(figsize=(8, 12))
-        # xgb.plot_importance(model, max_num_features=20, height=0.8, ax=ax)
-        # plt.show()
+        fig, ax = plt.subplots(figsize=(8, 12))
+        xgb.plot_importance(model, max_num_features=25, height=0.8, ax=ax)
+        plt.show()
 
-        model.save_model('xgb_classifier_auc_76_model_v2(mapper).bin')
-        logging.info('Model  xgb_classifier_auc_76_model_v2(mapper).bin Stoerd')
+        # model.save_model('xgb_classifier_auc_76_model_v2(mapper).bin')
+        # logging.info('Model  xgb_classifier_auc_76_model_v2(mapper).bin Stoerd')
         return model
 
     def xgbRegressor(self, X_train, y_train, X_test, y_test):
@@ -361,23 +370,41 @@ class FeatureCreation():
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import accuracy_score
         from sklearn.feature_selection import SelectFromModel
+
+        df_news = pd.read_csv(config.NEW_TRAINING_FILE).fillna("none").reset_index(drop=True)
         
-        # load data
-        dataset = loadtxt(config.NEW_TRAINING_FILE, delimiter=",", encoding='utf-8')
-        # split data into X and y
-        X = dataset[:,1:25]
-        Y = dataset[:,26]
-        # split data into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.33, random_state=7)
+        X, y = df_news.iloc[:,:-1],df_news.iloc[:,-1]
+        
+        y = df_news['label']
+        X = df_news.drop(columns=['label'])
+        X = X[['text_word_count', 'title_len', 'title_word_count', 'VERBRatio',
+       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',
+       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',
+       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',
+       'num value count', 'is_len_range_1_500','text_unique_word_count','title_unique_word_count']]
+
+
+        data_dmatrix = xgb.DMatrix(data=X,label=y)
+
+
+
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=7)
+
+       
         # fit model on all training data
-        model = MyXGBClassifier()
+        model = XGBClassifier(learning_rate = 0.05, n_estimators=300, max_depth=10)
         model.fit(X_train, y_train)
+        
         # make predictions for test data and evaluate
         predictions = model.predict(X_test)
         accuracy = accuracy_score(y_test, predictions)
         print("Accuracy: %.2f%%" % (accuracy * 100.0))
+        
         # Fit model using each importance as a threshold
         thresholds = sort(model.feature_importances_)
+        print(thresholds)
+        
         for thresh in thresholds:
             # select features using threshold
             selection = SelectFromModel(model, threshold=thresh, prefit=True)
@@ -394,6 +421,8 @@ class FeatureCreation():
 
     def execute_classifier(self):
 
+        # self.caculateFeatureImp()
+
         logging.info("EDA")
         
         df_news = pd.read_csv(config.TRAINING_FILE).fillna("none").reset_index(drop=True)
@@ -404,40 +433,22 @@ class FeatureCreation():
         # print(df_news.head())
         df_news = self.generate_features(df_news.copy())
         print(df_news.columns)
-        df_news = df_news[['id', 'title', 'author', 'text', 'clean_text', 'text_len','text_word_count', 'title_len', 'title_word_count', 'VERBRatio',       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',       'num value count', 'is_len_range_1_500','label']]
+        # df_news = df_news[['id', 'title', 'author', 'text', 'clean_text', 'text_len','text_word_count', 'title_len', 'title_word_count', 'VERBRatio',       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',       'num value count', 'is_len_range_1_500','label']]
         df_news.to_csv(config.NEW_TRAINING_FILE)
-        self.caculateFeatureImp()
 
-        # resolutions.drop(columns=['priority',
-        #                           'u_incident_type',
-        #                           'u_1st_time_fix',
-        #                           'u_closure_fix',
-        #                           'state', 'u_source',
-        #                           'subcategory', 'work_notes',
-        #                           'impact', 'u_closure_subcategory',
-        #                           'cmdb_ci', 'severity', 'description'], inplace=True)
 
-        
-        # resolutions['label'].value_counts()
 
-        # resolutions_one = resolutions[resolutions['label'] == 1].sample(903)
+        df_news = pd.read_csv(config.NEW_TRAINING_FILE).fillna("none").reset_index(drop=True)
+        print(df_news.columns)
+        y = df_news['label']
+        X = df_news.drop(columns=['label'])
+        X = X[['text_word_count', 'title_len', 'title_word_count', 'VERBRatio',
+       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',
+       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',
+       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',
+       'num value count', 'is_len_range_1_500','text_unique_word_count','title_unique_word_count']]
 
-        # resolutions_zero = resolutions[resolutions['label'] == 0].sample(1000)
-
-        # resolutions = pd.concat([resolutions_one, resolutions_zero], axis=0, sort=True)
-        # resolutions['label'].value_counts()
-
-        # y = resolutions['label']
-        # X = resolutions.drop(columns=['label'])
-        # X = X[
-        #     ['ADJRatio', 'ADPRatio', 'ADVPNRatio', 'ActionCount', 'CONJRatio', 'DETRatio', 'NOUNRatio', 'NUMRatio',
-        #      'PRONRatio',
-        #      'PRTRatio', 'PUNCRatio', 'ProblemCount', 'VERBRatio', 'acronym count', 'acronym_to_activity_ratio',
-        #      'activity_count', 'ip address count', 'is_len_range_1_500', 'kb count', 'last_activity_len',
-        #      'num value count',
-        #      'server name count', 'u_ess_service', 'u_service', 'u_sla_status']]
-
-        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # # ## Label encoding and Scaling the data
 
@@ -475,7 +486,7 @@ class FeatureCreation():
         # logging.info(results)
 
         # # ## Model - XGBoost
-        # self.xgb_model = self.xgbclassifier(X_train_scaled, y_train, X_test_scaled, y_test)
+        self.xgb_model = self.xgbclassifier(X_train, y_train, X_test, y_test)
 
        
 

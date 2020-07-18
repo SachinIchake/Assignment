@@ -3,9 +3,8 @@ MAX_LEN = 512
 TRAIN_BATCH_SIZE = 8
 TEST_BATCH_SIZE = 4
 EPOCHS = 10
-# BERT_PATH = "../input/bert_base_uncased/"
 MODEL_PATH = "model.pt"
-TRAINING_FILE = "../input/data/train.csv"
+TRAINING_FILE = "../input/data/trainO.csv"
 NEW_TRAINING_FILE = "../input/data/train_with_new_features.csv"
-TESTING_FILE = "../input/data/test.csv" 
-# TOKENIZER = transformers.BertTokenizer.from_pretrained(BERT_PATH, do_lower_case=True)
+TESTING_FILE = "../input/data/testO.csv" 
+GLOVE="../input/model/glove.840B.300d.txt"

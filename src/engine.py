@@ -1,34 +1,31 @@
 import torch
 import torch.nn as nn
 from tqdm import tqdm
-
+from model import NEWSclassifier
 
 def loss_fn(outputs, labels):
     return nn.BCEWithLogitsLoss()(outputs, labels.view(-1, 1))
 
 
-def train_fn(data_loader, model, optimizer, device, scheduler):
+def train_fn(data_loader, model, optimizer, device):
+                    
     model.train()
 
     for bi, d in tqdm(enumerate(data_loader), total=len(data_loader)):
-        ids = d["ids"]
-        token_type_ids = d["token_type_ids"]
-        mask = d["mask"]
-        labels = d["labels"]
-
-        ids = ids.to(device, dtype=torch.long)
-        token_type_ids = token_type_ids.to(device, dtype=torch.long)
-        mask = mask.to(device, dtype=torch.long)
-        labels = labels.to(device, dtype=torch.float)
-
+        text = d["text"]
+        label = d["label"]
+        
+        
+        # text = text.to(device, dtype=torch.long)
+        # label = label.to(device, dtype=torch.long)
+        
         optimizer.zero_grad()
-        outputs = model(ids=ids, mask=mask, token_type_ids=token_type_ids)
+        outputs = model(text).squeeze()  
 
         loss = loss_fn(outputs, labels)
         loss.backward()
         optimizer.step()
-        scheduler.step()
-
+        
 
 def eval_fn(data_loader, model, device):
     model.eval()
@@ -36,17 +33,13 @@ def eval_fn(data_loader, model, device):
     fin_outputs = []
     with torch.no_grad():
         for bi, d in tqdm(enumerate(data_loader), total=len(data_loader)):
-            ids = d["ids"]
-            token_type_ids = d["token_type_ids"]
-            mask = d["mask"]
-            labels = d["labels"]
-
-            ids = ids.to(device, dtype=torch.long)
-            token_type_ids = token_type_ids.to(device, dtype=torch.long)
-            mask = mask.to(device, dtype=torch.long)
-            labels = labels.to(device, dtype=torch.float)
-
-            outputs = model(ids=ids, mask=mask, token_type_ids=token_type_ids)
+            text = d["text"]
+            label = d["label"]
+            
+            # text = text.to(device, dtype=torch.long)
+            # label = label.to(device, dtype=torch.long)
+             
+            outputs = model(text).squeeze()
             fin_labels.extend(labels.cpu().detach().numpy().tolist())
             fin_outputs.extend(torch.sigmoid(outputs).cpu().detach().numpy().tolist())
     return fin_outputs, fin_labels

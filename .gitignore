@@ -5,3 +5,7 @@ build
 dist
 __pycache__
 checkpoints
+.ipynb_checkpoints/
+.vector_cache/
+input/data/train_with_new_features-Copy.csv
+input/model/
