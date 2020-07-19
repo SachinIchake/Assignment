@@ -9,3 +9,4 @@ checkpoints
 .vector_cache/
 input/data/train_with_new_features-Copy.csv
 input/model/
+src/model.pt

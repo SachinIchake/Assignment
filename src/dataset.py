@@ -12,12 +12,9 @@ class NEWSDataset:
         return len(self.text)
 
     def __getitem__(self, item):
-        text = str(self.text[item])
-        text = " ".join(text.split())
-        label = str(self.label[item])
-        # TODO TEXT PROCESSING
-        
+        text = self.text[item]
+        label = self.label[item]        
         return {
-            "text": text,
-            "label": label            
+            "text": torch.tensor(text, dtype=torch.long) ,
+            "label": torch.tensor(label, dtype=torch.float) ,            
         }
