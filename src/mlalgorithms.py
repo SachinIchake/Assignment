@@ -1,3 +1,4 @@
+from sklearn.metrics import recall_score,precision_score
 import matplotlib.pyplot as plt 
 import pandas as pd
 import re
@@ -297,6 +298,7 @@ class FeatureCreation():
         y_pred = model.predict(test_data)
         accuracy = accuracy_score(test_label, y_pred)
         print("Accuracy: %.2f%%" % (accuracy * 100.0))
+        
 
         pickle.dump(model, open(os.path.join(config.MODEL_PATH_ML,'xgb.bin'), 'wb'))
         logging.info('Model XGB Stoerd')
@@ -364,16 +366,16 @@ class FeatureCreation():
 
         # logging.info("EDA")
         
-        # df_news = pd.read_csv(config.TRAINING_FILE).fillna("none").reset_index(drop=True)
-        # df_news.dropna(inplace=True)
-        # # df_train, df_test = model_selection.train_test_split(dfx, test_size=0.1, random_state=42, stratify=dfx.label.values)
-        # df_news['clean_text'] =self.processText(df_news)
-        # df_news.dropna(inplace=True)
-        # # print(df_news.head())
-        # df_news = self.generate_features(df_news.copy())
-        # print(df_news.columns)
-        # # df_news = df_news[['id', 'title', 'author', 'text', 'clean_text', 'text_len','text_word_count', 'title_len', 'title_word_count', 'VERBRatio',       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',       'num value count', 'is_len_range_1_500','label']]
-        # df_news.to_csv(config.NEW_TRAINING_FILE)
+        df_news = pd.read_csv(config.TRAINING_FILE).fillna("none").reset_index(drop=True)
+        df_news.dropna(inplace=True)
+        # df_train, df_test = model_selection.train_test_split(dfx, test_size=0.1, random_state=42, stratify=dfx.label.values)
+        df_news['clean_text'] =self.processText(df_news)
+        df_news.dropna(inplace=True)
+        # print(df_news.head())
+        df_news = self.generate_features(df_news.copy())
+        print(df_news.columns)
+        # df_news = df_news[['id', 'title', 'author', 'text', 'clean_text', 'text_len','text_word_count', 'title_len', 'title_word_count', 'VERBRatio',       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',       'num value count', 'is_len_range_1_500','label']]
+        df_news.to_csv(config.NEW_TRAINING_FILE)
 
 
 
@@ -425,15 +427,64 @@ class FeatureCreation():
         # logging.info(results)
 
         # # ## Model - XGBoost
+        df_test = pd.read_csv(config.TESTING_FILE).fillna("none").reset_index(drop=True)
+        X_test_pred = df_test[['text']].values
+
         self.xgb_model = self.XGBclassifier(X_train, y_train, X_test, y_test)
         self.lr_model = self.LRClassifier(X_train, y_train, X_test, y_test)
         self.svc_model = self.RFClassifier(X_train, y_train, X_test, y_test)
         self.NB_model = self.NBclassifier(X_train, y_train, X_test, y_test)
+    
+
+
+
+    def predict_classifier(self):
+
+        # self.caculateFeatureImp()
+
+        # logging.info("EDA")
+        
+        df_news = pd.read_csv(config.TESTING_FILE).fillna("none").reset_index(drop=True)
+        df_news.dropna(inplace=True)
+        # df_train, df_test = model_selection.train_test_split(dfx, test_size=0.1, random_state=42, stratify=dfx.label.values)
+        df_news['clean_text'] =self.processText(df_news)
+        df_news.dropna(inplace=True)
+        # print(df_news.head())
+        df_news = self.generate_features(df_news.copy())
+        print(df_news.columns)
+        # df_news = df_news[['id', 'title', 'author', 'text', 'clean_text', 'text_len','text_word_count', 'title_len', 'title_word_count', 'VERBRatio',       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',       'num value count', 'is_len_range_1_500','label']]
+        # df_news.to_csv(config.NEW_TRAINING_FILE_TEST)
+
+
+
+        # df_news = pd.read_csv(config.NEW_TRAINING_FILE_TEST).fillna("none").reset_index(drop=True)
+       
+    
+        X = df_news[['text_word_count', 'title_len', 'title_word_count', 'VERBRatio',
+       'NOUNRatio', 'PRONRatio', 'ADJRatio', 'ADVPNRatio', 'ADPRatio',
+       'CONJRatio', 'DETRatio', 'NUMRatio', 'PRTRatio', 'PUNCRatio',
+       'ActionCount', 'acronym_to_activity_ratio', 'acronym count',
+       'num value count', 'is_len_range_1_500','text_unique_word_count','title_unique_word_count']]
+
+        # load model from file
+        loaded_model = pickle.load(open("D:/Git/tomtom/Assignment/input/model/xgb.bin", "rb"))
+        # make predictions for test data
+        y_pred = loaded_model.predict(X)
+        print(y_pred)
+        
         
 
-       
+        df_submit = pd.read_csv(config.SUBMIT_FILE).fillna("none").reset_index(drop=True)
+        df_submit = df_submit.reset_index(drop=True)
+        y_test= df_submit['label']
+        df_submit['predicted'] =y_pred
+        df_submit.to_csv(config.PREDICTED_SUBMIT)
+        
+        print(recall_score(y_test, y_pred)*100)
+        print(precision_score(y_test, y_pred)*100)
+
 
 if __name__ == '__main__':
     rc = FeatureCreation()
     rc.execute_classifier()
-    # rc.execute_regessors()
+    rc.predict_classifier()
