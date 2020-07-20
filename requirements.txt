@@ -1,3 +1,6 @@
+xgboost
+sklearn
+pandas
 numpy
 torch>=1.0
 torchvision
@@ -7,3 +10,4 @@ tensorboard
 terminaltables
 pillow
 tqdm
+seaborn
