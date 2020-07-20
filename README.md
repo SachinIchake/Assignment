@@ -1,4 +1,6 @@
-	 
+## Architecture
+![Screenshot](input/model/architecture.jpg)
+
 ## Problem Statement
 	In this project, we have used various natural language processing techniques and machine learning algorithms to classify fake news articles using Machine Learning and Deep Learning models.
 
