@@ -144,5 +144,8 @@
 	Execute below command to train deep learning models [LSTM,BERT] and saves the model to MODEL_PATH directory
 	Python train.py
 	Note: As per EDA, we can use title and text or erhier one to train the model. For now, I have used text for training and inferencing.
-###### Precision: 
-###### Recall: 
+###### Precision XGB: 69.01
+###### Recall XGB: 63.88
+
+###### BERT Accuracy : 63.52 for 5 epochs 
+###### LSTM Accuracy : 61.98 for 20 epochs
