@@ -120,7 +120,7 @@
 			*compare the records with label which word count is greater than 100
 	•	Feature Selection 
 	•	Run the xgb and extract features which are important  
-
+![Screenshot](input/model/FeatureImportance.JPG)
 
 ### Train Model
 ###### Model Parameters:
