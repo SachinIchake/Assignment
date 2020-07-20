@@ -143,6 +143,6 @@
 ###### Deep Learning
 	Execute below command to train deep learning models [LSTM,BERT] and saves the model to MODEL_PATH directory
 	Python train.py
-
+	Note: As per EDA, we can use title and text or erhier one to train the model. For now, I have used text for training and inferencing.
 ###### Precision: 
 ###### Recall: 
